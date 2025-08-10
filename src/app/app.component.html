@@ -152,6 +152,97 @@
   </div>
 </div>
 
+<!-- Featured Meals Section -->
+<section class="py-16 px-4 md:px-8 bg-gray-50">
+  <div class="max-w-7xl mx-auto">
+    <!-- Section Header -->
+    <div class="text-center mb-12">
+      <h2 class="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
+        Featured Meals
+      </h2>
+      <p class="text-gray-600 text-lg">
+        Discover our most popular dishes from top restaurants
+      </p>
+    </div>
+
+    <!-- Meals Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+      <!-- Dynamic Meal Cards -->
+      <div
+        *ngFor="let meal of meals; let i = index"
+        class="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 cursor-pointer group"
+        (click)="editMeal(i)"
+      >
+        <div class="relative">
+          <img
+            [src]="meal.imageUrl"
+            [alt]="meal.foodName"
+            class="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+          <div
+            class="absolute top-4 left-4 bg-orange-500 text-white px-3 py-1 rounded-full text-sm font-semibold"
+          >
+            💰 ${{ meal.price.toFixed(2) }}
+          </div>
+          <div class="absolute bottom-4 left-4">
+            <div
+              class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-xs"
+            >
+              {{ meal.restaurantLogo }}
+            </div>
+          </div>
+        </div>
+        <div class="p-4">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="font-semibold text-gray-800">{{ meal.foodName }}</h3>
+            <button class="text-gray-400 hover:text-gray-600">
+              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z"
+                />
+              </svg>
+            </button>
+          </div>
+          <div class="flex items-center mb-3">
+            <div class="flex text-yellow-400">
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20">
+                <path
+                  d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.958a1 1 0 00.95.69h4.162c.969 0 1.371 1.24.588 1.81l-3.37 2.448a1 1 0 00-.364 1.118l1.286 3.958c.3.921-.755 1.688-1.54 1.118l-3.37-2.448a1 1 0 00-1.175 0l-3.37 2.448c-.784.57-1.838-.197-1.539-1.118l1.286-3.958a1 1 0 00-.364-1.118L2.049 9.385c-.783-.57-.38-1.81.588-1.81h4.162a1 1 0 00.95-.69l1.286-3.958z"
+                />
+              </svg>
+              <span class="ml-1 text-sm text-gray-600">{{
+                meal.rating.toFixed(1)
+              }}</span>
+            </div>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-sm text-gray-500">{{ meal.restaurantName }}</span>
+            <span
+              class="px-2 py-1 text-xs rounded-full"
+              [class.bg-green-100]="meal.restaurantStatus === 'Open'"
+              [class.text-green-600]="meal.restaurantStatus === 'Open'"
+              [class.bg-red-100]="meal.restaurantStatus === 'Closed'"
+              [class.text-red-600]="meal.restaurantStatus === 'Closed'"
+            >
+              {{ meal.restaurantStatus }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Load More Button -->
+    <div class="text-center">
+      <button
+        class="px-8 py-3 text-white rounded-lg font-medium transition-all duration-300 hover:scale-105 hover:shadow-lg transform hover:-translate-y-1"
+        style="background-color: #ffb30e"
+      >
+        Load more
+      </button>
+    </div>
+  </div>
+</section>
+
 <!-- Footer Section -->
 <footer
   class="text-white py-16 px-4 md:px-8"
@@ -327,120 +418,22 @@
 </footer>
 
 <!-- Add Meal Dialog -->
-<dialog
-  #addMealDialog
-  class="rounded-2xl p-8 max-w-md w-full border-0 shadow-2xl backdrop:bg-transparent"
->
-  <!-- Dialog Header -->
-  <div class="flex items-center justify-between mb-6">
-    <h2 class="text-2xl font-bold text-gray-800">Add New Meal</h2>
-    <button
-      (click)="closeAddMealDialog()"
-      class="text-gray-400 hover:text-gray-600 transition-colors"
-      type="button"
-    >
-      <svg
-        class="w-6 h-6"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
+<dialog #addMealDialog>
+  <div class="dialog-content p-8 animate-in fade-in-0 zoom-in-95 duration-300">
+    <!-- Dialog Header -->
+    <div class="flex items-center justify-between mb-6">
+      <h2
+        class="text-2xl font-bold text-gray-800 animate-in slide-in-from-left-4 duration-500"
       >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M6 18L18 6M6 6l12 12"
-        />
-      </svg>
-    </button>
-  </div>
-
-  <!-- Dialog Form -->
-  <form (submit)="onSubmitMeal($event)" class="space-y-6">
-    <!-- Meal Name -->
-    <div>
-      <label class="block text-sm font-medium text-gray-700 mb-2"
-        >Meal Name</label
-      >
-      <input
-        type="text"
-        required
-        placeholder="Enter meal name"
-        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-      />
-    </div>
-
-    <!-- Description -->
-    <div>
-      <label class="block text-sm font-medium text-gray-700 mb-2"
-        >Description</label
-      >
-      <textarea
-        rows="3"
-        placeholder="Describe your meal"
-        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
-      ></textarea>
-    </div>
-
-    <!-- Price -->
-    <div>
-      <label class="block text-sm font-medium text-gray-700 mb-2">Price</label>
-      <div class="relative">
-        <span
-          class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500"
-          >$</span
-        >
-        <input
-          type="number"
-          step="0.01"
-          required
-          placeholder="0.00"
-          class="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-        />
-      </div>
-    </div>
-
-    <!-- Category -->
-    <div>
-      <label class="block text-sm font-medium text-gray-700 mb-2"
-        >Category</label
-      >
-      <select
-        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-      >
-        <option value="">Select a category</option>
-        <option value="appetizer">Appetizer</option>
-        <option value="main-course">Main Course</option>
-        <option value="dessert">Dessert</option>
-        <option value="beverage">Beverage</option>
-        <option value="snack">Snack</option>
-      </select>
-    </div>
-
-    <!-- Preparation Time -->
-    <div>
-      <label class="block text-sm font-medium text-gray-700 mb-2"
-        >Preparation Time (minutes)</label
-      >
-      <input
-        type="number"
-        min="1"
-        required
-        placeholder="e.g., 30"
-        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-      />
-    </div>
-
-    <!-- Image Upload -->
-    <div>
-      <label class="block text-sm font-medium text-gray-700 mb-2"
-        >Meal Image</label
-      >
-      <div
-        class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-orange-500 transition-colors"
+        {{ isEditMode ? "Edit Meal" : "Add New Meal" }}
+      </h2>
+      <button
+        (click)="closeAddMealDialog()"
+        class="text-gray-400 hover:text-gray-600 transition-all duration-200 hover:scale-110 hover:rotate-90"
+        type="button"
       >
         <svg
-          class="w-12 h-12 text-gray-400 mx-auto mb-2"
+          class="w-6 h-6"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -449,30 +442,203 @@
             stroke-linecap="round"
             stroke-linejoin="round"
             stroke-width="2"
-            d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+            d="M6 18L18 6M6 6l12 12"
           />
         </svg>
-        <p class="text-gray-500 text-sm">Click to upload or drag and drop</p>
-        <input type="file" accept="image/*" class="hidden" />
-      </div>
+      </button>
     </div>
 
-    <!-- Form Actions -->
-    <div class="flex space-x-4 pt-4">
-      <button
-        type="button"
-        (click)="closeAddMealDialog()"
-        class="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+    <!-- Dialog Form -->
+    <form (submit)="onSubmitMeal($event)" class="space-y-6">
+      <!-- Food Name -->
+      <div class="animate-in slide-in-from-bottom-4 duration-500 delay-100">
+        <label class="block text-sm font-medium text-gray-700 mb-2"
+          >Food Name *</label
+        >
+        <input
+          type="text"
+          name="foodName"
+          required
+          placeholder="Enter food name"
+          [value]="currentMeal.foodName"
+          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300 focus:scale-105 hover:shadow-md"
+        />
+      </div>
+
+      <!-- Rating (Number Input) -->
+      <div class="animate-in slide-in-from-bottom-4 duration-500 delay-200">
+        <label class="block text-sm font-medium text-gray-700 mb-2"
+          >Rating (0-5) *</label
+        >
+        <input
+          type="number"
+          name="rating"
+          min="0"
+          max="5"
+          step="0.1"
+          required
+          placeholder="Enter rating (0-5)"
+          [value]="currentMeal.rating"
+          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300 focus:scale-105 hover:shadow-md"
+        />
+      </div>
+
+      <!-- Price -->
+      <div class="animate-in slide-in-from-bottom-4 duration-500 delay-250">
+        <label class="block text-sm font-medium text-gray-700 mb-2"
+          >Price ($) *</label
+        >
+        <input
+          type="number"
+          name="price"
+          min="0"
+          step="0.01"
+          required
+          placeholder="Enter price"
+          [value]="currentMeal.price"
+          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300 focus:scale-105 hover:shadow-md"
+        />
+      </div>
+
+      <!-- Image URL -->
+      <div class="animate-in slide-in-from-bottom-4 duration-500 delay-300">
+        <label class="block text-sm font-medium text-gray-700 mb-2"
+          >Image URL *</label
+        >
+        <input
+          type="url"
+          name="imageUrl"
+          required
+          placeholder="https://example.com/food-image.jpg"
+          [value]="currentMeal.imageUrl"
+          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300 focus:scale-105 hover:shadow-md"
+        />
+      </div>
+
+      <!-- Restaurant Name -->
+      <div class="animate-in slide-in-from-bottom-4 duration-500 delay-350">
+        <label class="block text-sm font-medium text-gray-700 mb-2"
+          >Restaurant Name *</label
+        >
+        <input
+          type="text"
+          name="restaurantName"
+          required
+          placeholder="Enter restaurant name"
+          [value]="currentMeal.restaurantName"
+          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300 focus:scale-105 hover:shadow-md"
+        />
+      </div>
+
+      <!-- Restaurant Logo -->
+      <div class="animate-in slide-in-from-bottom-4 duration-500 delay-400">
+        <label class="block text-sm font-medium text-gray-700 mb-2"
+          >Restaurant Logo (Emoji or Text) *</label
+        >
+        <input
+          type="text"
+          name="restaurantLogo"
+          required
+          placeholder="🍕 or Restaurant Logo"
+          [value]="currentMeal.restaurantLogo"
+          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300 focus:scale-105 hover:shadow-md"
+        />
+      </div>
+
+      <!-- Restaurant Status -->
+      <div class="animate-in slide-in-from-bottom-4 duration-500 delay-450">
+        <label class="block text-sm font-medium text-gray-700 mb-2"
+          >Restaurant Status *</label
+        >
+        <select
+          name="restaurantStatus"
+          required
+          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300 focus:scale-105 hover:shadow-md"
+        >
+          <option value="">Select status</option>
+          <option
+            value="Open"
+            [selected]="currentMeal.restaurantStatus === 'Open'"
+          >
+            Open
+          </option>
+          <option
+            value="Closed"
+            [selected]="currentMeal.restaurantStatus === 'Closed'"
+          >
+            Closed
+          </option>
+        </select>
+      </div>
+
+      <!-- Image Preview Section -->
+      <div class="animate-in slide-in-from-bottom-4 duration-500 delay-500">
+        <label class="block text-sm font-medium text-gray-700 mb-2"
+          >Image Preview</label
+        >
+        <div
+          class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-orange-500 transition-all duration-300 hover:scale-105 hover:shadow-lg"
+        >
+          <div class="animate-bounce">
+            <svg
+              class="w-12 h-12 text-gray-400 mx-auto mb-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+            </svg>
+          </div>
+          <p class="text-gray-500 text-sm">
+            Preview will appear when image URL is entered
+          </p>
+          <div id="imagePreview" class="mt-4 hidden">
+            <img
+              class="max-h-32 mx-auto rounded-lg shadow-md transition-transform duration-300 hover:scale-110"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- Form Actions -->
+      <div
+        class="flex space-x-4 pt-6 animate-in slide-in-from-bottom-4 duration-500 delay-600"
       >
-        Cancel
-      </button>
-      <button
-        type="submit"
-        class="flex-1 px-6 py-3 text-white rounded-lg font-medium transition-colors hover:opacity-90"
-        style="background-color: #ffb30e"
-      >
-        Add Meal
-      </button>
-    </div>
-  </form>
+        <button
+          type="button"
+          (click)="closeAddMealDialog()"
+          class="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all duration-300 font-medium hover:scale-105 hover:shadow-md"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          class="flex-1 px-6 py-3 text-white rounded-lg font-medium transition-all duration-300 hover:scale-105 hover:shadow-lg transform hover:-translate-y-1"
+          style="background-color: #ffb30e"
+        >
+          <span class="flex items-center justify-center space-x-2">
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+              />
+            </svg>
+            <span>{{ isEditMode ? "Update Meal" : "Add Meal" }}</span>
+          </span>
+        </button>
+      </div>
+    </form>
+  </div>
 </dialog>
