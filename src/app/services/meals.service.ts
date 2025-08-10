@@ -8,6 +8,11 @@ export interface Restaurant {
   status: 'open' | 'closed';
 }
 
+export interface UpdateMealRequest {
+  foodName: string;
+  rating: number;
+}
+
 export interface CreateMealRequest {
   foodName: string;
   rating: number;
@@ -60,6 +65,22 @@ export class MealsService {
 
   createMeal(mealData: CreateMealRequest): Observable<Meal> {
     return this.http.post<Meal>(this.apiUrl, mealData, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+  }
+
+  deleteMeal(mealId: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/${mealId}`);
+  }
+
+  getMealById(mealId: number): Observable<Meal> {
+    return this.http.get<Meal>(`${this.apiUrl}/${mealId}`);
+  }
+
+  updateMeal(mealId: number, mealData: UpdateMealRequest): Observable<Meal> {
+    return this.http.put<Meal>(`${this.apiUrl}/${mealId}`, mealData, {
       headers: {
         'Content-Type': 'application/json'
       }

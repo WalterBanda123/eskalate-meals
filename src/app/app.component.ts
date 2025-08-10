@@ -1,7 +1,7 @@
 import { Component, ViewChild, ElementRef, AfterViewInit, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { MealsService, Meal, MealsResponse, CreateMealRequest } from './services/meals.service';
+import { MealsService, Meal, MealsResponse, CreateMealRequest, UpdateMealRequest } from './services/meals.service';
 
 @Component({
   selector: 'app-root',
@@ -20,6 +20,11 @@ export class AppComponent implements AfterViewInit, OnInit {
   totalPages = 0;
   isLoading = false;
   hasMoreMeals = true;
+
+  // Delete confirmation modal
+  showDeleteModal = false;
+  mealToDelete: Meal | null = null;
+  mealToDeleteIndex = -1;
 
   @ViewChild('addMealDialog') addMealDialog!: ElementRef<HTMLDialogElement>;
 
@@ -41,7 +46,9 @@ export class AppComponent implements AfterViewInit, OnInit {
   constructor(private mealsService: MealsService) { }
 
   ngOnInit() {
-    this.loadMeals();
+    // this.loadMeals();
+    this.loadSampleData()
+
   }
 
   // Load meals from API
@@ -152,8 +159,26 @@ export class AppComponent implements AfterViewInit, OnInit {
   editMeal(index: number) {
     this.isEditMode = true;
     this.currentMealIndex = index;
-    this.currentMeal = { ...this.meals[index] };
+    const mealId = this.meals[index].id;
+
+    // Show loading state
+    this.isLoading = true;
     this.addMealDialog.nativeElement.showModal();
+
+    // Fetch fresh meal data from API
+    this.mealsService.getMealById(mealId).subscribe({
+      next: (meal: Meal) => {
+        this.currentMeal = { ...meal };
+        this.isLoading = false;
+      },
+      error: (error) => {
+        console.error('Error fetching meal details:', error);
+        // Fallback to local data
+        this.currentMeal = { ...this.meals[index] };
+        this.isLoading = false;
+        alert('Failed to load meal details. Using local data.');
+      }
+    });
   }
 
   closeAddMealDialog() {
@@ -163,10 +188,36 @@ export class AppComponent implements AfterViewInit, OnInit {
 
   deleteMeal(index: number, event: Event) {
     event.stopPropagation(); // Prevent triggering the edit dialog
-    if (confirm('Are you sure you want to delete this meal?')) {
-      this.meals.splice(index, 1);
-      console.log('Deleted meal at index:', index);
+    this.mealToDelete = this.meals[index];
+    this.mealToDeleteIndex = index;
+    this.showDeleteModal = true;
+  }
+
+  confirmDelete() {
+    if (this.mealToDelete && this.mealToDeleteIndex !== -1) {
+      this.isLoading = true;
+      this.mealsService.deleteMeal(this.mealToDelete.id).subscribe({
+        next: () => {
+          console.log('Meal deleted successfully');
+          // Remove from local array
+          this.meals.splice(this.mealToDeleteIndex, 1);
+          this.cancelDelete();
+          this.isLoading = false;
+        },
+        error: (error) => {
+          console.error('Error deleting meal:', error);
+          this.isLoading = false;
+          alert('Failed to delete meal. Please try again.');
+          this.cancelDelete();
+        }
+      });
     }
+  }
+
+  cancelDelete() {
+    this.showDeleteModal = false;
+    this.mealToDelete = null;
+    this.mealToDeleteIndex = -1;
   }
 
   onSubmitMeal(event: Event) {
@@ -175,22 +226,28 @@ export class AppComponent implements AfterViewInit, OnInit {
     const formData = new FormData(form);
 
     if (this.isEditMode && this.currentMealIndex >= 0) {
-      // Update existing meal (local update for now)
-      const mealData: Meal = {
-        id: this.currentMeal.id,
+      // Update existing meal via API
+      const updateMealData: UpdateMealRequest = {
         foodName: formData.get('foodName') as string,
-        price: parseFloat(formData.get('price') as string) || 0,
-        rating: parseFloat(formData.get('rating') as string),
-        imageUrl: formData.get('imageUrl') as string,
-        restaurantName: formData.get('restaurantName') as string,
-        restaurantLogo: formData.get('restaurantLogo') as string,
-        restaurantStatus: formData.get('restaurantStatus') as 'Open' | 'Closed'
+        rating: parseFloat(formData.get('rating') as string)
       };
 
-      this.meals[this.currentMealIndex] = mealData;
-      console.log('Updated Meal:', mealData);
-      this.closeAddMealDialog();
-      form.reset();
+      this.isLoading = true;
+      this.mealsService.updateMeal(this.currentMeal.id, updateMealData).subscribe({
+        next: (updatedMeal: Meal) => {
+          console.log('Updated meal:', updatedMeal);
+          // Update the local array with the response from server
+          this.meals[this.currentMealIndex] = updatedMeal;
+          this.closeAddMealDialog();
+          form.reset();
+          this.isLoading = false;
+        },
+        error: (error) => {
+          console.error('Error updating meal:', error);
+          this.isLoading = false;
+          alert('Failed to update meal. Please try again.');
+        }
+      });
     } else {
       // Create new meal via API
       const createMealData: CreateMealRequest = {
