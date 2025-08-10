@@ -1,8 +1,10 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 export interface Restaurant {
+  _id?: string;
   name: string;
   logo: string;
   status: 'open' | 'closed';
@@ -20,8 +22,19 @@ export interface CreateMealRequest {
   restaurant: Restaurant;
 }
 
+// API Response structure
+export interface ApiMealResponse {
+  _id: string;
+  foodName: string;
+  rating: number;
+  imageUrl: string;
+  restaurant: Restaurant;
+  __v?: number;
+}
+
+// UI Meal interface (flattened for easier use in templates)
 export interface Meal {
-  id: number;
+  id: string;
   foodName: string;
   price?: number;
   rating: number;
@@ -47,6 +60,20 @@ export class MealsService {
 
   constructor(private http: HttpClient) { }
 
+  // Transform API response to UI format
+  private transformApiMeal(apiMeal: ApiMealResponse): Meal {
+    return {
+      id: apiMeal._id,
+      foodName: apiMeal.foodName,
+      rating: apiMeal.rating,
+      imageUrl: apiMeal.imageUrl,
+      restaurantName: apiMeal.restaurant.name,
+      restaurantLogo: apiMeal.restaurant.logo,
+      restaurantStatus: apiMeal.restaurant.status === 'open' ? 'Open' : 'Closed',
+      price: 0 // Default price since API doesn't return it
+    };
+  }
+
   getMeals(page: number = 1, limit: number = 8, search: string = ''): Observable<MealsResponse> {
     let params = new HttpParams()
       .set('page', page.toString())
@@ -56,7 +83,22 @@ export class MealsService {
       params = params.set('search', search);
     }
 
-    return this.http.get<MealsResponse>(this.apiUrl, { params });
+    return this.http.get<{
+      message: string;
+      data: ApiMealResponse[];
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    }>(this.apiUrl, { params }).pipe(
+      map(response => ({
+        data: response.data.map(apiMeal => this.transformApiMeal(apiMeal)),
+        page: response.page,
+        limit: response.limit,
+        total: response.total,
+        totalPages: response.totalPages
+      }))
+    );
   }
 
   searchMeals(searchTerm: string, page: number = 1, limit: number = 8): Observable<MealsResponse> {
@@ -71,19 +113,24 @@ export class MealsService {
     });
   }
 
-  deleteMeal(mealId: number): Observable<any> {
+  deleteMeal(mealId: string): Observable<any> {
     return this.http.delete(`${this.apiUrl}/${mealId}`);
   }
 
-  getMealById(mealId: number): Observable<Meal> {
-    return this.http.get<Meal>(`${this.apiUrl}/${mealId}`);
+  getMealById(mealId: string): Observable<Meal> {
+    return this.http.get<{ message: string; data: ApiMealResponse }>(`${this.apiUrl}/${mealId}`)
+      .pipe(
+        map((response: { message: string; data: ApiMealResponse }) => this.transformApiMeal(response.data))
+      );
   }
 
-  updateMeal(mealId: number, mealData: UpdateMealRequest): Observable<Meal> {
-    return this.http.put<Meal>(`${this.apiUrl}/${mealId}`, mealData, {
+  updateMeal(mealId: string, mealData: UpdateMealRequest): Observable<Meal> {
+    return this.http.put<{ message: string; data: ApiMealResponse }>(`${this.apiUrl}/${mealId}`, mealData, {
       headers: {
         'Content-Type': 'application/json'
       }
-    });
+    }).pipe(
+      map((response: { message: string; data: ApiMealResponse }) => this.transformApiMeal(response.data))
+    );
   }
 }

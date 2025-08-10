@@ -33,7 +33,7 @@ export class AppComponent implements AfterViewInit, OnInit {
 
   // Current meal being edited or added
   currentMeal: Meal = {
-    id: 0,
+    id: '',
     foodName: '',
     price: 0,
     rating: 0,
@@ -45,9 +45,14 @@ export class AppComponent implements AfterViewInit, OnInit {
 
   constructor(private mealsService: MealsService) { }
 
+  // Helper method to generate random review count for demo purposes
+  getRandomReviewCount(): number {
+    return Math.floor(Math.random() * 100) + 10;
+  }
+
   ngOnInit() {
-    // this.loadMeals();
-    this.loadSampleData()
+    this.loadMeals();
+    // this.loadSampleData()
 
   }
 
@@ -63,6 +68,9 @@ export class AppComponent implements AfterViewInit, OnInit {
     this.mealsService.getMeals(this.currentPage, this.limit, this.searchTerm)
       .subscribe({
         next: (response: MealsResponse) => {
+          console.log('API Response:', response);
+          console.log('First meal structure:', response.data[0]);
+
           if (reset) {
             this.meals = response.data;
           } else {
@@ -102,7 +110,7 @@ export class AppComponent implements AfterViewInit, OnInit {
   loadSampleData() {
     this.meals = [
       {
-        id: 1,
+        id: '1',
         foodName: 'Bowl Lasagna',
         price: 2.99,
         rating: 4.5,
@@ -112,7 +120,7 @@ export class AppComponent implements AfterViewInit, OnInit {
         restaurantStatus: 'Closed'
       },
       {
-        id: 2,
+        id: '2',
         foodName: 'Mixed Avocado Smoothie',
         price: 5.99,
         rating: 2.0,
@@ -122,7 +130,7 @@ export class AppComponent implements AfterViewInit, OnInit {
         restaurantStatus: 'Closed'
       },
       {
-        id: 3,
+        id: '3',
         foodName: 'Pancake',
         price: 3.99,
         rating: 2.0,
@@ -132,7 +140,7 @@ export class AppComponent implements AfterViewInit, OnInit {
         restaurantStatus: 'Open'
       },
       {
-        id: 4,
+        id: '4',
         foodName: 'Cupcake',
         price: 1.99,
         rating: 0.0,
@@ -159,7 +167,21 @@ export class AppComponent implements AfterViewInit, OnInit {
   editMeal(index: number) {
     this.isEditMode = true;
     this.currentMealIndex = index;
-    const mealId = this.meals[index].id;
+    const meal = this.meals[index];
+
+    // Try to get the meal ID - check for different possible ID fields
+    const mealId = meal.id || (meal as any)._id || (meal as any).mealId;
+
+    console.log('Editing meal:', meal);
+    console.log('Meal ID found:', mealId);
+
+    // If we don't have a valid ID, use local data directly
+    if (!mealId || mealId === 'undefined') {
+      console.warn('No valid meal ID found, using local data');
+      this.currentMeal = { ...meal };
+      this.addMealDialog.nativeElement.showModal();
+      return;
+    }
 
     // Show loading state
     this.isLoading = true;
@@ -176,7 +198,6 @@ export class AppComponent implements AfterViewInit, OnInit {
         // Fallback to local data
         this.currentMeal = { ...this.meals[index] };
         this.isLoading = false;
-        alert('Failed to load meal details. Using local data.');
       }
     });
   }
@@ -195,8 +216,18 @@ export class AppComponent implements AfterViewInit, OnInit {
 
   confirmDelete() {
     if (this.mealToDelete && this.mealToDeleteIndex !== -1) {
+      // Try to get the meal ID - check for different possible ID fields
+      const mealId = this.mealToDelete.id || (this.mealToDelete as any)._id || (this.mealToDelete as any).mealId;
+
+      if (!mealId || mealId === 'undefined') {
+        console.warn('No valid meal ID found for deletion, removing from local array only');
+        this.meals.splice(this.mealToDeleteIndex, 1);
+        this.cancelDelete();
+        return;
+      }
+
       this.isLoading = true;
-      this.mealsService.deleteMeal(this.mealToDelete.id).subscribe({
+      this.mealsService.deleteMeal(mealId).subscribe({
         next: () => {
           console.log('Meal deleted successfully');
           // Remove from local array
@@ -281,7 +312,7 @@ export class AppComponent implements AfterViewInit, OnInit {
 
   private resetCurrentMeal() {
     this.currentMeal = {
-      id: 0,
+      id: '',
       foodName: '',
       price: 0,
       rating: 0,
